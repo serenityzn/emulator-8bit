@@ -17,12 +17,13 @@ var cpuCommands [5]byte = [5]byte{
 	0x80, //LDA flags  1000 0000
 	0x20, //LDB flags  0010 0000
 	0x60, //CPAB flags 0110 0000
-	0x00, // HLT flags  0000 0000
+	0x02, // HLT flags  0000 0010
 	//0x??, // JMP
 }
 
 var main_count int = 0
 var step int = 0
+var halt int = 0
 
 func getBit(a byte, bitNumber int) (int, error) {
 	if bitNumber > 8 {
@@ -71,6 +72,11 @@ func execCommand() error {
 	if err != nil {
 		return err
 	}
+	halt, err = getBit(x, 2)
+	if err != nil {
+		return err
+	}
+
 	regM.valueEnabled = 0
 	regCom.inputEnabled = 0
 	regCom.outputEnabled = 0
@@ -141,27 +147,31 @@ func cpuLogging(step int, count byte) {
 		tm.MoveCursor(1, 2)
 		tm.Printf("    [%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b]", ROM[0], ROM[1], ROM[2], ROM[3], ROM[4], ROM[5], ROM[6], ROM[8], ROM[9], ROM[10], ROM[11], ROM[12], ROM[13], ROM[14], ROM[15], ROM[16], ROM[17], ROM[18], ROM[19], ROM[20])
 		tm.MoveCursor(1, 3)
-		tm.Println(tm.Background(tm.Color(tm.Bold(" NPC   PC    SC   REGA  REGB  CMDREG     MEMREG   MEM16REG   BUS"), tm.BLACK), tm.YELLOW))
+		tm.Println(tm.Background(tm.Color(tm.Bold(" NPC   PC    SC   REGA  REGB  CMDREG     ADDRREG   ADDR16REG   BUS"), tm.BLACK), tm.YELLOW))
 		tm.MoveCursor(1, 4)
 		tm.Printf("[ %x ] [ %x ] [ %v ] [ %x ] [ %x ] [ %04b ]  [ %04b ] [ %08b ] [ %08b ]", pmCounter.value[0], count, step, regA.value, regB.value, regCom.value, regM.value, regM.value16, bus)
 		tm.MoveCursor(1, 5)
-		tm.Println(tm.Background(tm.Color(tm.Bold(" AIE AOE BIE BOE MIE MOE MVE M16 CIE COE PMI PMO PMC"), tm.BLACK), tm.BLUE))
+		tm.Println(tm.Background(tm.Color(tm.Bold(" AIE AOE BIE BOE ADIE ADOE ADVE AD16 CIE COE PMI PMO PMC HLT"), tm.BLACK), tm.BLUE))
 		tm.MoveCursor(1, 6)
-		tm.Printf(" [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v]", regA.inputEnabled, regA.outputEnabled, regB.inputEnabled, regB.outputEnabled, regM.inputEnabled, regM.outputEnabled, regM.valueEnabled, regM.value16Enabled, regCom.inputEnabled, regCom.outputEnabled, pmCounter.inputEnabled, pmCounter.outputEnabled, pmCounter.countEnabled)
+		tm.Printf(" [%v] [%v] [%v] [%v] [%v]  [%v]  [%v]  [%v]  [%v] [%v] [%v] [%v] [%v] [%v]", regA.inputEnabled, regA.outputEnabled, regB.inputEnabled, regB.outputEnabled, regM.inputEnabled, regM.outputEnabled, regM.valueEnabled, regM.value16Enabled, regCom.inputEnabled, regCom.outputEnabled, pmCounter.inputEnabled, pmCounter.outputEnabled, pmCounter.countEnabled, halt)
 		tm.Clear()
 		tm.Flush()
 	} else {
 		log.Printf("[%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b|%08b]", ROM[0], ROM[1], ROM[2], ROM[3], ROM[4], ROM[5], ROM[6], ROM[8], ROM[9], ROM[10], ROM[11], ROM[12], ROM[13], ROM[14], ROM[15], ROM[16], ROM[17], ROM[18], ROM[19], ROM[20])
-		log.Println(" NPC   PC    SC   REGA   REGB    CMDREG      MEMREG   MEM16REG       BUS")
+		log.Println(" NPC   PC    SC   REGA   REGB    CMDREG      ADDRREG   ADDR16REG       BUS")
 		log.Printf("[ %x ] [ %x ] [ %v ] [ %x ] [ %x ] [ %08b ]  [ %08b ]  [ %08b ] [ %08b ]", pmCounter.value[0], count, step, regA.value, regB.value, regCom.value, regM.value, regM.value16, bus)
-		log.Println(" AIE AOE BIE BOE MIE MOE MVE M16 CIE COE PMI PMO PMC")
-		log.Printf(" [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v]", regA.inputEnabled, regA.outputEnabled, regB.inputEnabled, regB.outputEnabled, regM.inputEnabled, regM.outputEnabled, regM.valueEnabled, regM.value16Enabled, regCom.inputEnabled, regCom.outputEnabled, pmCounter.inputEnabled, pmCounter.outputEnabled, pmCounter.countEnabled)
+		log.Println(" AIE AOE BIE BOE ADIE ADOE ADVE AD16 CIE COE PMI PMO PMC HLT")
+		log.Printf(" [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v] [%v]", regA.inputEnabled, regA.outputEnabled, regB.inputEnabled, regB.outputEnabled, regM.inputEnabled, regM.outputEnabled, regM.valueEnabled, regM.value16Enabled, regCom.inputEnabled, regCom.outputEnabled, pmCounter.inputEnabled, pmCounter.outputEnabled, pmCounter.countEnabled, halt)
 		log.Println("---------------------------------------------------------------------------")
 	}
 }
 
-func cpu() {
-
+func cpu() error {
+	if halt == 1 {
+		tm.Println("HALT !!!")
+		cpuLogging(step, pmCounter.value[0])
+		return nil
+	}
 	steps(byte(step), pmCounter.value[0])
 	cpuLogging(step, pmCounter.value[0])
 	step, _ = stepCounter(step)
@@ -170,6 +180,7 @@ func cpu() {
 		pmCounter.countEnabled = 1
 		setFlags([13]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0})
 	}
+	return nil
 }
 
 func stepCounter(c int) (int, error) {

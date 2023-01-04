@@ -49,7 +49,7 @@ func main() {
 	regcom_init()
 	pmc_init()
 
-	clockTicker = time.NewTicker(200 * time.Millisecond)
+	clockTicker = time.NewTicker(50 * time.Millisecond)
 	socket := make(chan int)
 	go clock(clockTicker, socket)
 

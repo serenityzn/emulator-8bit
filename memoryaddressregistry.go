@@ -4,7 +4,7 @@ import (
 	tm "github.com/buger/goterm"
 )
 
-type MemoryAddressRegistry struct {
+type AddressRegistry struct {
 	value          byte
 	value16        byte
 	outputEnabled  int
@@ -13,16 +13,16 @@ type MemoryAddressRegistry struct {
 	value16Enabled int
 }
 
-func (regm *MemoryAddressRegistry) readFromAdressROM() {
+func (regm *AddressRegistry) readFromAdressROM() {
 	address := addressROM.address[pmCounter.value[0]] * addressROM.offset[pmCounter.value[0]]
 	regm.value16 = ROM[address]
 }
 
-func (regm *MemoryAddressRegistry) readFromBus() {
+func (regm *AddressRegistry) readFromBus() {
 	regm.value = bus & 0xf
 }
 
-func (regm *MemoryAddressRegistry) writeToBus() error {
+func (regm *AddressRegistry) writeToBus() error {
 
 	if regm.value16Enabled == 1 {
 		bus = regm.value16
@@ -39,7 +39,7 @@ func (regm *MemoryAddressRegistry) writeToBus() error {
 	return nil
 }
 
-var regM MemoryAddressRegistry
+var regM AddressRegistry
 
 func regm_init() {
 	tm.Println("Memory Registry Initializing...")
