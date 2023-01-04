@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+
 	tm "github.com/buger/goterm"
 )
 
@@ -26,21 +27,11 @@ var regCom CommandRegistry
 
 var regComTicker *time.Ticker
 
-func regcom_init(speed time.Duration, duration string) {
+func regcom_init() {
 	tm.Println("Command Registry Initializing...")
 	regCom.value = 0x00
 	regCom.inputEnabled = 0
 	regCom.outputEnabled = 0
-	switch duration {
-	case "mili":
-		regComTicker = time.NewTicker(speed * time.Millisecond)
-	case "micro":
-		regComTicker = time.NewTicker(speed * time.Microsecond)
-	case "nano":
-		regComTicker = time.NewTicker(speed * time.Nanosecond)
-	default:
-		regComTicker = time.NewTicker(speed * time.Millisecond)
-	}
 }
 
 func regComlogic() {
@@ -52,13 +43,6 @@ func regComlogic() {
 	}
 }
 
-func regComRoutine(ticker *time.Ticker) {
-	for {
-		select {
-		case <-ticker.C:
-			if mainClock == 1 {
-				regComlogic()
-			}
-		}
-	}
+func registerComRoutine() {
+	regComlogic()
 }

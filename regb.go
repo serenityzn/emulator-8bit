@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+
 	tm "github.com/buger/goterm"
 )
 
@@ -22,8 +23,7 @@ func (regb *RegisterB) writeToBus() {
 var regB RegisterB
 var regbTicker *time.Ticker
 
-
-func regb_init(speed time.Duration, duration string) {
+func regb_init() {
 	//tm.MoveCursor(1,1)
 	tm.Println("RegB Initializing...")
 	//tm.Flush()
@@ -31,16 +31,7 @@ func regb_init(speed time.Duration, duration string) {
 	regB.value = 0x00
 	regB.inputEnabled = 0
 	regB.outputEnabled = 0
-	switch duration {
-	case "mili":
-		regbTicker = time.NewTicker(speed * time.Millisecond)
-	case "micro":
-		regbTicker = time.NewTicker(speed * time.Microsecond)
-	case "nano":
-		regbTicker = time.NewTicker(speed * time.Nanosecond)
-	default:
-		regbTicker = time.NewTicker(speed * time.Millisecond)
-	}
+
 }
 
 func regblogic() {
@@ -52,16 +43,6 @@ func regblogic() {
 	}
 }
 
-func RegisterBRoutine(ticker *time.Ticker) {
-	for {
-		select {
-		case <-ticker.C:
-			//log.Printf("From reg routing %v", mainClock)
-			//log.Println("")
-			if mainClock == 1 {
-				//log.Printf("Main clock pules is %v. BUS is %v regb is %v", mainClock, bus, regB)
-				regblogic()
-			}
-		}
-	}
+func registerBRoutine() {
+	regblogic()
 }

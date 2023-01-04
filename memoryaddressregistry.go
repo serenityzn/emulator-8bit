@@ -1,71 +1,64 @@
 package main
 
 import (
-	"time"
-
 	tm "github.com/buger/goterm"
 )
 
 type MemoryAddressRegistry struct {
-	value         byte
-	outputEnabled int
-	inputEnabled  int
-	valueEnabled int
+	value          byte
+	value16        byte
+	outputEnabled  int
+	inputEnabled   int
+	valueEnabled   int
+	value16Enabled int
+}
+
+func (regm *MemoryAddressRegistry) readFromAdressROM() {
+	address := addressROM.address[pmCounter.value[0]] * addressROM.offset[pmCounter.value[0]]
+	regm.value16 = ROM[address]
 }
 
 func (regm *MemoryAddressRegistry) readFromBus() {
 	regm.value = bus & 0xf
 }
 
-func (regm *MemoryAddressRegistry) writeToBus()  error{
+func (regm *MemoryAddressRegistry) writeToBus() error {
+
+	if regm.value16Enabled == 1 {
+		bus = regm.value16
+		return nil
+	}
+
 	if regm.valueEnabled == 1 {
 		//log.Printf("REading value from ROM reg value is [%v] value with offset is [%v] Value is [%x]",regm.value,regm.value+0xf,ROM[regm.value+0xf])
 		bus = ROM[regm.value+0xf]
 		return nil
 	}
+
 	bus = ROM[regm.value]
 	return nil
 }
 
 var regM MemoryAddressRegistry
 
-var regMTicker *time.Ticker
-
-func regm_init(speed time.Duration, duration string) {
+func regm_init() {
 	tm.Println("Memory Registry Initializing...")
 	regM.value = 0x00
 	regM.inputEnabled = 0
 	regM.outputEnabled = 0
 	regM.valueEnabled = 0
-	regMTicker = time.NewTicker(speed * time.Millisecond)
-	switch duration {
-	case "mili":
-		regMTicker = time.NewTicker(speed * time.Millisecond)
-	case "micro":
-		regMTicker = time.NewTicker(speed * time.Microsecond)
-	case "nano":
-		regMTicker = time.NewTicker(speed * time.Nanosecond)
-	default:
-		regMTicker = time.NewTicker(speed * time.Millisecond)
-	}
 }
 
 func regMlogic() {
 	if regM.inputEnabled == 1 {
 		regM.readFromBus()
+		regM.readFromAdressROM()
 	}
 	if regM.outputEnabled == 1 {
 		regM.writeToBus()
 	}
 }
 
-func registerMRoutine(ticker *time.Ticker) {
-	for {
-		select {
-		case <-ticker.C:
-			if mainClock == 1 {
-				regMlogic()
-			}
-		}
-	}
+func registerMRoutine() {
+	regMlogic()
 }
