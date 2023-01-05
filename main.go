@@ -57,10 +57,10 @@ func main() {
 	for {
 		switch <-socket {
 		case 1:
-			registerARoutine()
-			registerBRoutine()
-			registerMRoutine()
-			registerComRoutine()
+			regAlogic()
+			regBlogic()
+			regMlogic()
+			regComlogic()
 			pmCounterRoutine()
 		case 0:
 			cpu()
